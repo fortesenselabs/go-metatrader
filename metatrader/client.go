@@ -1,10 +1,13 @@
 package metatrader
 
 import (
+	"fmt"
 	"log"
 	"os"
 
-	"github.com/FortesenseLabs/go-metatrader/models"
+	"github.com/FortesenseLabs/go-metatrader/metatrader/models"
+	"github.com/FortesenseLabs/go-metatrader/metatrader/utils"
+	"github.com/mitchellh/mapstructure"
 )
 
 type MetaTrader struct {
@@ -16,13 +19,13 @@ type MetaTrader struct {
 	API               *MTFunctions
 }
 
-func NewMetaTraderClient(host string, realVolume bool, debug bool, authorizationCode string, instrumentLookup []string) *MetaTrader {
+func NewMetaTraderClient(host string, port int, realVolume bool, debug bool, authorizationCode string, instrumentLookup []string) *MetaTrader {
 	if debug {
 		log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 		log.SetOutput(os.Stdout)
 	}
 
-	api := NewMTFunctions(host, 1122, debug, instrumentLookup, authorizationCode)
+	api := NewMTFunctions(host, port, debug, instrumentLookup, authorizationCode)
 
 	return &MetaTrader{
 		Host:              host,
@@ -51,40 +54,68 @@ func (mt *MetaTrader) Disconnect() {
 // }
 
 func (mt *MetaTrader) GetAccountInfo() (*models.AccountInfoResponse, error) {
-	var response *models.AccountInfoResponse
-	err := mt.API.SendCommand("ACCOUNT", response)
+	response, err := mt.API.SendCommand("ACCOUNT")
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
-	return response, nil
+	var accountInfo *models.AccountInfoResponse
+
+	err = mapstructure.Decode(response, &accountInfo)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding response: %s", err)
+	}
+
+	return accountInfo, nil
 }
 
 func (mt *MetaTrader) GetBalance() (*models.BalanceResponse, error) {
-	var response *models.BalanceResponse
-	err := mt.API.SendCommand("BALANCE", response)
+	response, err := mt.API.SendCommand("BALANCE")
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
-	return response, nil
+	var balanceResponse *models.BalanceResponse
+
+	err = mapstructure.Decode(response, &balanceResponse)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding response: %s", err)
+	}
+
+	return balanceResponse, nil
 }
 
-// func (mt *MetaTrader) GetHistoricalData(symbol string, timeFrame string, actionType string, from string, to string) (*models.HistoricalDataResponse, error) {
-// 	fromDate, err := utils.ConvertDateToUTC(from, "02-01-2006 15:04:05")
-// 	if err != nil {
-// 		return nil, err
-// 	}
+func (mt *MetaTrader) GetHistoricalData(symbol string, timeFrame string, actionType string, from string, to string) (*models.HistoricalDataResponse, error) {
+	fromDate, err := utils.ConvertDateToUTC(from, "02-01-2006 15:04:05")
+	if err != nil {
+		return nil, err
+	}
 
-// 	toDate, err := utils.ConvertDateToUTC(to, "02-01-2006 15:04:05")
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	toDate, err := utils.ConvertDateToUTC(to, "02-01-2006 15:04:05")
+	if err != nil {
+		return nil, err
+	}
 
-// 	command := "HISTORY|symbol=" + symbol + "|timeFrame=" + timeFrame + "|actionType=" + actionType + "|from=" + fromDate + "|to=" + toDate
+	command := "HISTORY|symbol=" + symbol + "|timeFrame=" + timeFrame + "|actionType=" + actionType + "|from=" + fromDate + "|to=" + toDate
 
-// 	return mt.API.SendCommand(command)
-// }
+	response, err := mt.API.SendCommand(command)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(response.(map[string]interface{}))
+
+	return mt.ProcessHistoricalData(response.(map[string]interface{}), timeFrame, actionType)
+}
+
+func (mt *MetaTrader) ProcessHistoricalData(data map[string]interface{}, timeFrame string, actionType string) (*models.HistoricalDataResponse, error) {
+	// matrix := data["rates"].([][]string)
+
+	// df := dataframe.LoadMatrix(matrix)
+
+	// fmt.Println(df)
+	return nil, nil
+}
 
 // func (mt *MetaTrader) Buy(symbol string, volume float64, stoploss float64, takeprofit float64, deviation float64) (*models.TradeResponse, error) {
 // 	return mt.trade(symbol, "ORDER_TYPE_BUY", volume, stoploss, takeprofit, 0, deviation)
