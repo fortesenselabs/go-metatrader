@@ -1,2 +1,2 @@
-## MetaTrader API Interface (Client)
+# MetaTrader API Interface (Client)
 
