@@ -1,3 +1,3 @@
-module github.com/FortesenseLabs/mtservices/clients/go-metatrader
+module github.com/FortesenseLabs/mtservices/go-metatrader
 
 go 1.20

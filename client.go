@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/FortesenseLabs/mtservices/clients/go-metatrader/models"
+	"github.com/FortesenseLabs/mtservices/go-metatrader/models"
 )
 
 type MetaTrader struct {
