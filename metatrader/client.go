@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/FortesenseLabs/mtservices/go-metatrader/models"
+	"github.com/FortesenseLabs/go-metatrader/models"
 )
 
 type MetaTrader struct {
@@ -16,7 +16,7 @@ type MetaTrader struct {
 	API               *MTFunctions
 }
 
-func NewMetaTrader(host string, realVolume bool, debug bool, authorizationCode string, instrumentLookup []string) *MetaTrader {
+func NewMetaTraderClient(host string, realVolume bool, debug bool, authorizationCode string, instrumentLookup []string) *MetaTrader {
 	if debug {
 		log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 		log.SetOutput(os.Stdout)
