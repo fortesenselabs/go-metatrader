@@ -28,7 +28,7 @@ func (mt *MTFunctions) IsConnected() bool {
 func (mt *MTFunctions) setTimeout(timeout_in_seconds int) {
 	mt.timeout_value = timeout_in_seconds
 	mt.sock.SetDeadline(time.Now().Add(time.Duration(mt.timeout_value) * time.Second))
-	mt.sock.(*net.TCPConn).SetReadBuffer(0)
+	mt.sock.(*net.TCPConn).SetReadBuffer(SOCKET_BUFFER_SIZE)
 }
 
 func (mt *MTFunctions) Disconnect() bool {
@@ -63,30 +63,38 @@ func (mt *MTFunctions) sendRequest(data string) error {
 	return err
 }
 
-func (mt *MTFunctions) recv(bufferSize int) []byte {
+func (mt *MTFunctions) recv(bufferSize int) ([]byte, error) {
 	data := make([]byte, bufferSize)
 
 	n, err := mt.sock.Read(data)
-	if n == 0 {
-		panic("no data received from the server")
+	if n == 0 && len(data) == 0 && err == nil { 
+		return nil, fmt.Errorf("no data received from the server")
 	}
 
 	if err != nil {
 		if errors.Is(err, os.ErrDeadlineExceeded) {
-			panic("timeout reached while reading from the server")
+			return nil, fmt.Errorf("timeout reached while reading from the server")
 		}
-		panic(fmt.Errorf("error reading data from the server: %v", err))
+		return nil, fmt.Errorf("error reading data from the server: %v", err)
 	}
 
-	return data[:n-1]
+	return data[:n-1], nil
 }
 
 func (mt *MTFunctions) getReply() (interface{}, error) {
-	for {
-		data := mt.recv(SOCKET_BUFFER_SIZE)
+	var msg interface{}
 
-		var msg interface{}
-		if err := json.Unmarshal(data, &msg); err == nil {
+	buffer := ""
+
+	for {
+		data, err := mt.recv(SOCKET_BUFFER_SIZE)
+		if err != nil {
+			return nil, err
+		}
+
+		buffer += string(data)
+
+		if err := json.Unmarshal([]byte(buffer), &msg); err == nil {
 			// Successfully parsed JSON, return the message
 			// fmt.Println("msg => ", msg)
 			return msg, nil
