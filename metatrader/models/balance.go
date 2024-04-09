@@ -1,6 +1,6 @@
 package models
 
-type BalanceResponse struct { // Balance response (correct this)
+type Balance struct { // Balance response (correct this)
 	Balance    float64 `json:"balance"`
 	Equity     float64 `json:"equity"`
 	Margin     float64 `json:"margin"`

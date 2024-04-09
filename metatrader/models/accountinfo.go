@@ -1,6 +1,6 @@
 package models
 
-type AccountInfoResponse struct {
+type AccountInfo struct {
 	Account        string  `json:"account"`
 	Balance        float64 `json:"balance"`
 	Error          bool    `json:"error"`
